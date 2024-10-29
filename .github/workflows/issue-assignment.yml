@@ -16,13 +16,17 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install dependencies
-        run: pip install email-validator
-
       - name: Extract Assignee Email
         id: extract_email
         run: |
-          echo "::set-output name=assignee_email::${{ secrets.USER_EMAIL_MAPPING[${{ github.event.issue.assignee.login }}] }}"
+          EMAIL_MAPPING="${{ secrets.USER_EMAIL_MAPPING }}"
+          ASSIGNEE="${{ github.event.issue.assignee.login }}"
+          EMAIL=$(echo "$EMAIL_MAPPING" | jq -r --arg assignee "$ASSIGNEE" '.[$assignee]')
+          if [ "$EMAIL" == "null" ]; then
+            echo "Assignee email not found."
+            exit 1
+          fi
+          echo "::set-output name=assignee_email::$EMAIL"
 
       - name: Send Email
         run: |
