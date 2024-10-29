@@ -16,21 +16,26 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install jq (if necessary)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Extract Assignee Email
         id: extract_email
         run: |
-          EMAIL_MAPPING="${{ secrets.USER_EMAIL_MAPPING }}"
+          EMAIL_MAPPING='${{ secrets.USER_EMAIL_MAPPING }}'
           ASSIGNEE="${{ github.event.issue.assignee.login }}"
           EMAIL=$(echo "$EMAIL_MAPPING" | jq -r --arg assignee "$ASSIGNEE" '.[$assignee]')
           if [ "$EMAIL" == "null" ]; then
             echo "Assignee email not found."
             exit 1
           fi
-          echo "::set-output name=assignee_email::$EMAIL"
+          echo "assignee_email=$EMAIL" >> $GITHUB_ENV
 
       - name: Send Email
         run: |
-          python send_email.py "${{ steps.extract_email.outputs.assignee_email }}" \
+          python send_email.py "$assignee_email" \
             "Issue Assigned: ${{ github.event.issue.title }}" \
             "You have been assigned to the issue: ${{ github.event.issue.html_url }}"
         env:
