@@ -1,0 +1,36 @@
+name: Notify Assignee by Email
+
+on:
+  issues:
+    types: [assigned]
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install email-validator
+
+      - name: Extract Assignee Email
+        id: extract_email
+        run: |
+          echo "::set-output name=assignee_email::${{ secrets.USER_EMAIL_MAPPING[${{ github.event.issue.assignee.login }}] }}"
+
+      - name: Send Email
+        run: |
+          python send_email.py "${{ steps.extract_email.outputs.assignee_email }}" \
+            "Issue Assigned: ${{ github.event.issue.title }}" \
+            "You have been assigned to the issue: ${{ github.event.issue.html_url }}"
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
