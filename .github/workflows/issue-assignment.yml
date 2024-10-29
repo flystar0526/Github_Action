@@ -33,6 +33,28 @@ jobs:
           fi
           echo "assignee_email=$EMAIL" >> $GITHUB_ENV
 
+      - name: Get Assignee Email
+        id: get_mail
+        # 先取得 assignee 的名稱
+        # 接著使用 github 的 API，請求它的 email 資訊
+        # 但是有些人會把 email 設定成 private，因此可能為 null
+        run: |
+          ASSIGNEE="${{ github.event.issue.assignee.login }}"
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                         -H "Accept: application/vnd.github.v3+json" \
+                         https://api.github.com/users/$ASSIGNEE)
+                         
+          EMAIL=$(echo "$RESPONSE" | jq -r '.email')
+          
+          if [ -z "$EMAIL" ] || [ "$EMAIL" == "null" ]; then
+            echo "Email not found for assignee $ASSIGNEE."
+          else
+            echo "Found email for assignee: $EMAIL"
+          fi
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Send Email
         run: |
           python send_email.py "$assignee_email" \
