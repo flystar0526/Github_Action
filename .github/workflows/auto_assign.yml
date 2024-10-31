@@ -1,0 +1,21 @@
+name: Auto-Assign Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  assign_issue:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Install the gh cli
+        uses: ksivamuthu/actions-setup-gh-cli@v3
+        with:
+          version: 2.24.3
+      - name: Assign specific user to issue
+      # gh 指令要執行，需要設定一些環境變數
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} --add-assignee "flystar0526" --repo "flystar0526/Github_Project"
